@@ -1,0 +1,36 @@
+name: Monthly ProtonDB Data Download
+
+on:
+  schedule:
+    - cron: '0 6 5 * *'  # 5th of every month at 6am UTC
+  workflow_dispatch:       # Click "Run workflow" to trigger manually
+
+permissions:
+  contents: write          # Needed to push commits
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: pip install requests
+
+      - name: Run Data Downloader
+        run: python dump_parser.py
+
+      - name: Commit and Push
+        run: |
+          git config user.name "RIFT Data Bot"
+          git config user.email "bot@rift-launcher.com"
+          git add raw_reports.json seen_hashes.json
+          git diff --cached --quiet || git commit -m "🤖 Monthly ProtonDB data update"
+          git push
